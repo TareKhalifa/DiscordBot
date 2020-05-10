@@ -35,7 +35,7 @@ class TextModule(commands.Cog):
         aliases=[]
     )
     async def mention(self,ctx,arg):
-        for guild in bot.guilds:
+        for guild in ctx.bot.guilds:
             for member in guild.members:
                 if member.name.lower().find(arg.lower())!=-1:
                     await guild.channels[2].send(member.mention)

@@ -28,7 +28,7 @@ class CustomModule(commands.Cog):
     @commands.command(aliases = [])
     async def broadcast(self,ctx, *args):
         if ctx.author.id == 99566441992290304:
-            for guild in bot.guilds:
+            for guild in ctx.bot.guilds:
                 for channel in guild.channels:
                     if channel.type.name =='text' and channel.name =='general':
                         await channel.send(' '.join(args))
@@ -77,7 +77,7 @@ class CustomModule(commands.Cog):
             index+=1
             target+=1
             currenttext = None
-            for guild in bot.guilds:
+            for guild in ctx.bot.guilds:
                 for channel in guild.channels:
                     if channel.type.name =='text' and channel.name =='general':
                         #channel = bot.get_channel(702681453028442115)
