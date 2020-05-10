@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a1de0aa2-657b-4f42-809a-7766c274808a</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>DiscordBot.py</StartupFile>
+    <StartupFile>CommandHandler.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiscordBot</Name>
     <RootNamespace>DiscordBot</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,13 +22,26 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="archbase.py">
+    <Compile Include="CommandHandler.py" />
+    <Compile Include="Modules\archbase.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DiscordBot.py" />
+    <Compile Include="__init__.py" />
+    <Compile Include="Modules\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\TextModule.py" />
+    <Compile Include="Modules\CustomModule.py" />
+    <Compile Include="Modules\VoiceModuel.py" />
+    <Compile Include="Modules\HelpModule.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="keys.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Modules\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
