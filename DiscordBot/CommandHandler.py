@@ -9,30 +9,30 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 from discord.ext import commands
-import Modules
-from Modules import TextModule
+default_prefix = '$'
+bot = commands.Bot(command_prefix= default_prefix)
+modules = ['Modules.TextModule', 'Modules.CustomModule']
+
+
 filepath = 'keys.txt'
+key = ''
 with open(filepath) as fp:
    key = fp.readline()
+
 prefixes = {}
-so7oorlist = set()
 filesize = os.path.getsize("prefixes.json")
 if filesize!=0:
     with open('prefixes.json') as json_file:
         prefixes = json.load(json_file)
-data = []
-with open('times.txt') as f:
-    for line in f:
-        data.append(int(line.split()[0]))
-default_prefix = '$'
 
-bot = commands.Bot(command_prefix= default_prefix)
+
 @bot.event
 async def on_ready() :
     print('We have logged in as {0.user}'.format(bot))
-    print(Modules)
     game = discord.Game("with your feelings")
     await bot.change_presence(status=discord.Status.online, activity=game)
+    for m in modules:
+        bot.load_extension(m)
 
 @bot.event
 async def on_message(message):
