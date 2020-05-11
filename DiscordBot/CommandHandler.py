@@ -3,15 +3,11 @@ import time as timee
 import sched
 import json
 import os
-import _thread
 import asyncio
-import threading
-from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
 from discord.ext import commands
 default_prefix = '$'
 bot = commands.Bot(command_prefix= default_prefix)
-modules = ['Modules.TextModule', 'Modules.CustomModule']
+modules = ['Modules.TextModule', 'Modules.CustomModule', 'Modules.VoiceModule']
 
 
 filepath = 'keys.txt'
