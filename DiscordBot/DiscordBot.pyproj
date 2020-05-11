@@ -32,7 +32,7 @@
     </Compile>
     <Compile Include="Modules\TextModule.py" />
     <Compile Include="Modules\CustomModule.py" />
-    <Compile Include="Modules\VoiceModuel.py" />
+    <Compile Include="Modules\VoiceModule.py" />
     <Compile Include="Modules\HelpModule.py">
       <SubType>Code</SubType>
     </Compile>
