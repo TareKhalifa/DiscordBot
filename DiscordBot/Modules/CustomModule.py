@@ -48,8 +48,10 @@ class CustomModule(commands.Cog):
             else:
                 if user.bot == False:
                     if len(voiceChannels)>1:
+                        max = 3
                         for currentChannel in voiceChannels:
-                            if currentChannel!=original:
+                            if currentChannel!=original & max > 0 :
+                                max=max-1
                                 await user.move_to(currentChannel)
                         await user.move_to(original)
         else:
