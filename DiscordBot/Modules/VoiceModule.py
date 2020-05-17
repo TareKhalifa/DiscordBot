@@ -180,6 +180,7 @@ class VoiceModule(commands.Cog):
             content = f.read()
         finally:
             f.close()
+            print(names)
             names[0] = names[0][3:]
             for name in names:
                 name = str(name)
