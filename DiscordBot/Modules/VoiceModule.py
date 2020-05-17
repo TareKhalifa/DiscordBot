@@ -181,7 +181,7 @@ class VoiceModule(commands.Cog):
         finally:
             f.close()
             print(names)
-            names[0] = names[0][3:]
+            #names[0] = names[0][3:]
             for name in names:
                 name = str(name)
                 if name!='names.txt':
