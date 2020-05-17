@@ -108,7 +108,7 @@ class VoiceModule(commands.Cog):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         voice.pause()
 
-    @commands.command()
+    @commands.command(aliases = ['next','skip'])
     async def stop(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         voice.stop()
