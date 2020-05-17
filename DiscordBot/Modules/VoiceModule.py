@@ -101,6 +101,10 @@ class VoiceModule(commands.Cog):
         voice.pause()
 
     @commands.command()
+    async def stop(self, ctx):
+        voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+        voice.stop()
+    @commands.command()
     async def resume(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         voice.resume()
@@ -115,6 +119,15 @@ class VoiceModule(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, url: str):
+        channel = None
+        if ctx.author.voice != None:
+            channel = ctx.author.voice.channel
+        if ctx.voice_client is not None:
+            await ctx.voice_client.move_to(channel)
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
+        if channel != None:
+            await channel.connect()
         there = os.path.isfile("song.mp3")
         if there:
             os.remove("song.mp3")
