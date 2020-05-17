@@ -3,6 +3,8 @@ import time as timee
 import sched
 import json
 import os
+from os import walk
+import sys
 import asyncio
 from discord.ext import commands
 from discord.utils import get
@@ -156,7 +158,39 @@ class VoiceModule(commands.Cog):
             discord.FFmpegPCMAudio('song.mp3'))
         ctx.voice_client.play(source, after=lambda e: print(
             'Player error: %s' % e) if e else None)
-
+    
+    @commands.command()
+    async def saved(self, ctx):
+        channel = None
+        if ctx.author.voice != None:
+            channel = ctx.author.voice.channel
+        if ctx.voice_client is not None:
+            await ctx.voice_client.move_to(channel)
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
+        if channel != None:
+            await channel.connect()
+        mypath = os.path.dirname(os.path.abspath(__file__))
+        f = open(mypath+"\..\\savedmusic\\names.txt")
+        content = ''
+        try:
+            names = [line[:-1] for line in f]
+            d= 1
+            d = 1
+            content = f.read()
+        finally:
+            f.close()
+            names[0] = names[0][3:]
+            for name in names:
+                name = str(name)
+                if name!='names.txt':
+                    source = discord.PCMVolumeTransformer(
+                        discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" +name))
+                    ctx.voice_client.play(source, after=lambda e: print(
+                        'Player error: %s' % e) if e else None)
+                    await ctx.send('Now playing: '+ name[:-4])
+                    while ctx.voice_client.is_playing():
+                        await asyncio.sleep(1)
 
 def setup(bot):
     bot.add_cog(VoiceModule(bot))
