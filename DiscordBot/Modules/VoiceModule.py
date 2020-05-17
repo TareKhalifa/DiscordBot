@@ -13,8 +13,6 @@ import youtube_dl
 from os import system
 
 youtube_dl.utils.bug_reports_message = lambda: ''
-
-paused = 0
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -108,7 +106,6 @@ class VoiceModule(commands.Cog):
     @commands.command()
     async def pause(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
-        paused = 1
         voice.pause()
 
     @commands.command()
@@ -118,7 +115,6 @@ class VoiceModule(commands.Cog):
     @commands.command()
     async def resume(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
-        paused = 0
         voice.resume()
 
     @commands.command()
@@ -197,7 +193,7 @@ class VoiceModule(commands.Cog):
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
                     await ctx.send('Now playing: '+ name[:-4])
-                    while ctx.voice_client.is_playing() or paused==1:
+                    while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
                         await asyncio.sleep(1)
 
 def setup(bot):
