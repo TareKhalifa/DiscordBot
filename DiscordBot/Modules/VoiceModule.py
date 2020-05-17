@@ -160,7 +160,12 @@ class VoiceModule(commands.Cog):
             'Player error: %s' % e) if e else None)
     
     @commands.command()
-    async def saved(self, ctx):
+    async def saved(self, ctx, *arg):
+        folder = ''
+        if len(arg)==0:
+            folder = 'sia'
+        else:
+            folder = arg[0]
         channel = None
         if ctx.author.voice != None:
             channel = ctx.author.voice.channel
@@ -171,7 +176,7 @@ class VoiceModule(commands.Cog):
         if channel != None:
             await channel.connect()
         mypath = os.path.dirname(os.path.abspath(__file__))
-        f = open(mypath+"\..\\savedmusic\\names.txt")
+        f = open(mypath+"\..\\savedmusic\\" + folder.lower() +"\\names.txt")
         content = ''
         try:
             names = [line[:-1] for line in f]
@@ -186,7 +191,7 @@ class VoiceModule(commands.Cog):
                 name = str(name)
                 if name!='names.txt':
                     source = discord.PCMVolumeTransformer(
-                        discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" +name))
+                        discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name))
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
                     await ctx.send('Now playing: '+ name[:-4])
