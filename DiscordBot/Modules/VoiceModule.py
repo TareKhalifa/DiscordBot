@@ -78,7 +78,15 @@ class VoiceModule(commands.Cog):
     @commands.command()
     async def stream(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
-
+        channel = None
+        if ctx.author.voice != None:
+            channel = ctx.author.voice.channel
+        if ctx.voice_client is not None:
+            await ctx.voice_client.move_to(channel)
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
+        if channel != None:
+            await channel.connect()
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(
