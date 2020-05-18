@@ -4,6 +4,7 @@ import sched
 import json
 import os
 from os import walk
+from os import path
 import sys
 import asyncio
 from discord.ext import commands
@@ -185,16 +186,23 @@ class VoiceModule(commands.Cog):
             f.close()
             print(names)
             #names[0] = names[0][3:]
+            i = 0
+            msg = []
+            msg = [None] * len(names)
             for name in names:
                 name = str(name)
-                if name!='names.txt':
+                if name!='names.txt' and path.exists(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name):
                     source = discord.PCMVolumeTransformer(
                         discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name))
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
-                    await ctx.send('Now playing: '+ name[:-4])
+                    embed = discord.Embed(title = "Now playing:", description = name[:-4], color = 0x00FFFF)
+                    msg[i] = await ctx.send(embed = embed)
+                    if i>0:
+                        await msg[i-1].delete()
                     while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
                         await asyncio.sleep(1)
+                    i+=1
 
 def setup(bot):
     bot.add_cog(VoiceModule(bot))
