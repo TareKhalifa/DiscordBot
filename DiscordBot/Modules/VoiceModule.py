@@ -169,10 +169,11 @@ class VoiceModule(commands.Cog):
         if ctx.author.voice != None:
             channel = ctx.author.voice.channel
         if ctx.voice_client is not None:
-            await ctx.voice_client.move_to(channel)
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-        if channel != None:
+            if ctx.voice_client == ctx.author.voice.channel:
+                pass
+            else:
+                await ctx.voice_client.move_to(channel)
+        elif channel != None:
             await channel.connect()
         mypath = os.path.dirname(os.path.abspath(__file__))
         f = open(mypath+"\..\\savedmusic\\" + folder.lower() +"\\names.txt")
@@ -203,6 +204,8 @@ class VoiceModule(commands.Cog):
                     while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
                         await asyncio.sleep(1)
                     i+=1
+            voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+            voice.stop()
 
 def setup(bot):
     bot.add_cog(VoiceModule(bot))
