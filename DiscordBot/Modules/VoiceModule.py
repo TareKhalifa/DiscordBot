@@ -12,7 +12,17 @@ from discord.utils import get
 from discord import FFmpegPCMAudio
 import youtube_dl
 from os import system
-
+import urllib.request
+from bs4 import BeautifulSoup
+def youtubeSearch(song):
+    query = urllib.parse.quote(song)
+    url = "https://www.youtube.com/results?search_query=" + query
+    response = urllib.request.urlopen(url)
+    html = response.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+        if (vid['href'].find('watch?v')!=-1):
+            return('https://www.youtube.com' + vid['href'])
 youtube_dl.utils.bug_reports_message = lambda: ''
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -77,7 +87,16 @@ class VoiceModule(commands.Cog):
             await channel.connect()
 
     @commands.command()
-    async def stream(self, ctx, *, url):
+    async def stream(self, ctx, *url):
+        newurl = ''
+        if len(url)==0:
+            await ctx.send('Enter the name or the link of a song.')
+        else:
+            if url[0].find('.com')==-1:
+                song = ' '.join(url)
+                newurl = youtubeSearch(song)
+            else:
+                newurl = url[0]
         """Streams from a url (same as yt, but doesn't predownload)"""
         channel = None
         if ctx.author.voice != None:
@@ -89,11 +108,11 @@ class VoiceModule(commands.Cog):
         if channel != None:
             await channel.connect()
         async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(
                 'Player error: %s' % e) if e else None)
-
-        await ctx.send('Now playing: {}'.format(player.title))
+        embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
+        await ctx.send(embed = embed)
 
     @commands.command()
     async def leave(self, ctx):
@@ -127,37 +146,48 @@ class VoiceModule(commands.Cog):
         await ctx.send("Changed volume to {}%".format(volume))
 
     @commands.command()
-    async def play(self, ctx, url: str):
-        channel = None
-        if ctx.author.voice != None:
-            channel = ctx.author.voice.channel
-        if ctx.voice_client is not None:
-            await ctx.voice_client.move_to(channel)
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-        if channel != None:
-            await channel.connect()
-        there = os.path.isfile("song.mp3")
-        if there:
-            os.remove("song.mp3")
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        for file in os.listdir("./"):
-            if file.endswith(".mp3"):
-                os.rename(file, 'song.mp3')
-        source = discord.PCMVolumeTransformer(
-            discord.FFmpegPCMAudio('song.mp3'))
-        ctx.voice_client.play(source, after=lambda e: print(
-            'Player error: %s' % e) if e else None)
-    
+    async def play(self, ctx, *url):
+        newurl = ''
+        if len(url)==0:
+            await ctx.send('Enter the name or the link of a song.')
+        else:
+            if url[0].find('.com')==-1:
+                song = ' '.join(url)
+                newurl = youtubeSearch(song)
+            else:
+                newurl = url[0]
+            channel = None
+            if ctx.author.voice != None:
+                channel = ctx.author.voice.channel
+            if ctx.voice_client is not None:
+                await ctx.voice_client.move_to(channel)
+            if ctx.voice_client is not None:
+                return await ctx.voice_client.move_to(channel)
+            if channel != None:
+                await channel.connect()
+            there = os.path.isfile("song.mp3")
+            if there:
+                os.remove("song.mp3")
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([newurl])
+            for file in os.listdir("./"):
+                if file.endswith(".mp3"):
+                    os.rename(file, 'song.mp3')
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio('song.mp3'))
+            ctx.voice_client.play(source, after=lambda e: print(
+                'Player error: %s' % e) if e else None)
+            player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
+            embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
+            await ctx.send(embed = embed)
     @commands.command()
     async def saved(self, ctx, *arg):
         v = 1.0 
@@ -198,7 +228,7 @@ class VoiceModule(commands.Cog):
                         discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name))
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
-                    ctx.voice_client.source.volume = v
+                    ctx.voice_client.source.volume = v  
                     embed = discord.Embed(title = "Now playing:", description = name[:-4], color = 0x00FFFF)
                     msg[i] = await ctx.send(embed = embed)
                     if i>0:
