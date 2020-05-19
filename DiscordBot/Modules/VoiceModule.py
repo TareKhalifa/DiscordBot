@@ -14,6 +14,21 @@ import youtube_dl
 from os import system
 import urllib.request
 from bs4 import BeautifulSoup
+import lyricsgenius as genius
+song = ''
+geniuspath = os.path.dirname(os.path.abspath(__file__))
+filepath = geniuspath +'\..\\keys.txt'
+key = ''
+with open(filepath) as fp:
+    key = fp.readline()
+    key = fp.readline()
+api = genius.Genius(key)
+
+def lyrr(artist, songg):
+    song = api.search_song(songg, artist)
+    if song == None:
+        return ("Couldn't find the lyrics for this song: **" + songg+'**')
+    return('**' + song.artist + ' - ' + song.title + '**' + '\n' + song.lyrics)
 def youtubeSearch(song):
     query = urllib.parse.quote(song)
     url = "https://www.youtube.com/results?search_query=" + query
@@ -67,11 +82,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
-
 class VoiceModule(commands.Cog):
+    global song
     def __init__(self, bot):
         self.bot = bot
-
     @commands.command()
     async def join(self, ctx, *args: discord.VoiceChannel):
         channel = None
@@ -88,6 +102,10 @@ class VoiceModule(commands.Cog):
 
     @commands.command()
     async def stream(self, ctx, *url):
+        global song
+        voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+        if voice and voice.is_connected():
+            await voice.disconnect()
         newurl = ''
         if len(url)==0:
             await ctx.send('Enter the name or the link of a song.')
@@ -112,6 +130,7 @@ class VoiceModule(commands.Cog):
             ctx.voice_client.play(player, after=lambda e: print(
                 'Player error: %s' % e) if e else None)
         embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
+        song = player.title
         await ctx.send(embed = embed)
 
     @commands.command()
@@ -144,9 +163,34 @@ class VoiceModule(commands.Cog):
 
         ctx.voice_client.source.volume = volume / 100
         await ctx.send("Changed volume to {}%".format(volume))
+    @commands.command()
+    async def lyrics(self, ctx, *arg):
+        global song
+        if len(arg)==0:
+            pass
+        else:
+            song = ' '.join(arg)
+        lyrics = ''
+        if song.find(',') != -1:
+            lyrics = lyrr(song[song.find(',')+1:], song[:song.find(',')]).split('\n')
+        else:
+            lyrics = lyrr('', song).split('\n')
+        current = ''
+        for i in range(len(lyrics)):
+            if len(lyrics[i]) > 1:
+                current += lyrics[i] + '\n'
+            if((i % 10 == 0 and i > 0) or i == len(lyrics)-1):
+                await ctx.send(current)
+                worked = 0
+            if i % 10 == 0 and i != 0:
+                current = ''
 
     @commands.command()
     async def play(self, ctx, *url):
+        global song
+        voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+        if voice and voice.is_connected():
+            await voice.disconnect()
         newurl = ''
         if len(url)==0:
             await ctx.send('Enter the name or the link of a song.')
@@ -187,9 +231,14 @@ class VoiceModule(commands.Cog):
                 'Player error: %s' % e) if e else None)
             player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
             embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
+            song = player.title
             await ctx.send(embed = embed)
     @commands.command()
     async def saved(self, ctx, *arg):
+        global song
+        voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+        if voice and voice.is_connected():
+            await voice.disconnect()
         v = 1.0 
         folder = ''
         if len(arg)==0:
@@ -231,6 +280,7 @@ class VoiceModule(commands.Cog):
                     ctx.voice_client.source.volume = v  
                     embed = discord.Embed(title = "Now playing:", description = name[:-4], color = 0x00FFFF)
                     msg[i] = await ctx.send(embed = embed)
+                    song = name[:-4]
                     if i>0:
                         await msg[i-1].delete()
                     while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
