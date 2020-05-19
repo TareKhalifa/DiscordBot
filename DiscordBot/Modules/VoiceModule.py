@@ -160,6 +160,7 @@ class VoiceModule(commands.Cog):
     
     @commands.command()
     async def saved(self, ctx, *arg):
+        v = 1.0 
         folder = ''
         if len(arg)==0:
             folder = 'sia'
@@ -197,11 +198,13 @@ class VoiceModule(commands.Cog):
                         discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name))
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
+                    ctx.voice_client.source.volume = v
                     embed = discord.Embed(title = "Now playing:", description = name[:-4], color = 0x00FFFF)
                     msg[i] = await ctx.send(embed = embed)
                     if i>0:
                         await msg[i-1].delete()
                     while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
+                        v = ctx.voice_client.source.volume
                         await asyncio.sleep(1)
                     i+=1
             voice = get(ctx.bot.voice_clients, guild=ctx.guild)
