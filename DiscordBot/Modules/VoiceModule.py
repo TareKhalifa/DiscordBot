@@ -23,10 +23,20 @@ with open(filepath) as fp:
     key = fp.readline()
     key = fp.readline()
 api = genius.Genius(key)
-
+genius.skip_non_songs = True
 def lyrr(artist, songg):
+    if(songg.find('(')!=-1 and songg.find(')')!=-1 and songg.find('(') < songg.find(')')):
+        songg = songg[:songg.find('(')] + songg[songg.find(')')+1:]
+    if(songg.find('[')!=-1 and songg.find(']')!=-1 and songg.find('[') < songg.find(']')):
+        songg = songg[:songg.find('[')] + songg[songg.find(']')+1:]
     song = api.search_song(songg, artist)
     if song == None:
+        n = 10
+        while(n>0):
+            song = api.search_song(songg, artist)
+            if song != None:
+                return('**' + song.artist + ' - ' + song.title + '**' + '\n' + song.lyrics)
+            n-=1
         return ("Couldn't find the lyrics for this song: **" + songg+'**')
     return('**' + song.artist + ' - ' + song.title + '**' + '\n' + song.lyrics)
 def youtubeSearch(song):
