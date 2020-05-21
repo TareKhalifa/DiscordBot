@@ -17,37 +17,43 @@ from bs4 import BeautifulSoup
 import lyricsgenius as genius
 song = ''
 geniuspath = os.path.dirname(os.path.abspath(__file__))
-filepath = geniuspath +'\..\\keys.txt'
+filepath = geniuspath + '\..\\keys.txt'
 key = ''
 with open(filepath) as fp:
     key = fp.readline()
     key = fp.readline()
 api = genius.Genius(key)
 genius.skip_non_songs = True
+
+
 def lyrr(artist, songg):
-    if(songg.find('(')!=-1 and songg.find(')')!=-1 and songg.find('(') < songg.find(')')):
+    if(songg.find('(') != -1 and songg.find(')') != -1 and songg.find('(') < songg.find(')')):
         songg = songg[:songg.find('(')] + songg[songg.find(')')+1:]
-    if(songg.find('[')!=-1 and songg.find(']')!=-1 and songg.find('[') < songg.find(']')):
+    if(songg.find('[') != -1 and songg.find(']') != -1 and songg.find('[') < songg.find(']')):
         songg = songg[:songg.find('[')] + songg[songg.find(']')+1:]
     song = api.search_song(songg, artist)
     if song == None:
         n = 10
-        while(n>0):
+        while(n > 0):
             song = api.search_song(songg, artist)
             if song != None:
                 return('**' + song.artist + ' - ' + song.title + '**' + '\n' + song.lyrics)
-            n-=1
+            n -= 1
         return ("Couldn't find the lyrics for this song: **" + songg+'**')
     return('**' + song.artist + ' - ' + song.title + '**' + '\n' + song.lyrics)
+
+
 def youtubeSearch(song):
     query = urllib.parse.quote(song)
     url = "https://www.youtube.com/results?search_query=" + query
     response = urllib.request.urlopen(url)
     html = response.read()
     soup = BeautifulSoup(html, 'html.parser')
-    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-        if (vid['href'].find('watch?v')!=-1):
+    for vid in soup.findAll(attrs={'class': 'yt-uix-tile-link'}):
+        if (vid['href'].find('watch?v') != -1):
             return('https://www.youtube.com' + vid['href'])
+
+
 youtube_dl.utils.bug_reports_message = lambda: ''
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -92,10 +98,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
+
 class VoiceModule(commands.Cog):
     global song
+
     def __init__(self, bot):
         self.bot = bot
+
     @commands.command()
     async def join(self, ctx, *args: discord.VoiceChannel):
         channel = None
@@ -114,13 +123,13 @@ class VoiceModule(commands.Cog):
     async def stream(self, ctx, *url):
         global song
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
-        if voice and voice.is_connected():
-            await voice.disconnect()
+        if(voice != None):
+            voice.stop()
         newurl = ''
-        if len(url)==0:
+        if len(url) == 0:
             await ctx.send('Enter the name or the link of a song.')
         else:
-            if url[0].find('.com')==-1:
+            if url[0].find('.com') == -1:
                 song = ' '.join(url)
                 newurl = youtubeSearch(song)
             else:
@@ -130,18 +139,22 @@ class VoiceModule(commands.Cog):
         if ctx.author.voice != None:
             channel = ctx.author.voice.channel
         if ctx.voice_client is not None:
-            await ctx.voice_client.move_to(channel)
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-        if channel != None:
+            if ctx.voice_client == ctx.author.voice.channel:
+                pass
+            else:
+                await ctx.voice_client.move_to(channel)
+        elif channel != None:
             await channel.connect()
+        else:
+            return await ctx.send("Neither me or you are in a voice channel")
         async with ctx.typing():
             player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(
                 'Player error: %s' % e) if e else None)
-        embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
+        embed = discord.Embed(title="Now playing:",
+                              description=player.title, color=0x00FFFF)
         song = player.title
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def leave(self, ctx):
@@ -157,10 +170,11 @@ class VoiceModule(commands.Cog):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         voice.pause()
 
-    @commands.command(aliases = ['next','skip'])
+    @commands.command(aliases=['next', 'skip'])
     async def stop(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         voice.stop()
+
     @commands.command()
     async def resume(self, ctx):
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
@@ -173,16 +187,18 @@ class VoiceModule(commands.Cog):
 
         ctx.voice_client.source.volume = volume / 100
         await ctx.send("Changed volume to {}%".format(volume))
+
     @commands.command()
     async def lyrics(self, ctx, *arg):
         global song
-        if len(arg)==0:
+        if len(arg) == 0:
             pass
         else:
             song = ' '.join(arg)
         lyrics = ''
         if song.find(',') != -1:
-            lyrics = lyrr(song[song.find(',')+1:], song[:song.find(',')]).split('\n')
+            lyrics = lyrr(song[song.find(',')+1:],
+                          song[:song.find(',')]).split('\n')
         else:
             lyrics = lyrr('', song).split('\n')
         current = ''
@@ -197,61 +213,66 @@ class VoiceModule(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *url):
-        global song
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
-        if voice and voice.is_connected():
-            await voice.disconnect()
+        if(voice != None):
+            voice.stop()
         newurl = ''
-        if len(url)==0:
+        if len(url) == 0:
             await ctx.send('Enter the name or the link of a song.')
         else:
-            if url[0].find('.com')==-1:
+            if url[0].find('.com') == -1:
                 song = ' '.join(url)
                 newurl = youtubeSearch(song)
             else:
                 newurl = url[0]
-            channel = None
-            if ctx.author.voice != None:
-                channel = ctx.author.voice.channel
-            if ctx.voice_client is not None:
+        channel = None
+        if ctx.author.voice != None:
+            channel = ctx.author.voice.channel
+        if ctx.voice_client is not None:
+            if ctx.voice_client == ctx.author.voice.channel:
+                pass
+            else:
                 await ctx.voice_client.move_to(channel)
-            if ctx.voice_client is not None:
-                return await ctx.voice_client.move_to(channel)
-            if channel != None:
-                await channel.connect()
-            there = os.path.isfile("song.mp3")
-            if there:
-                os.remove("song.mp3")
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-            }
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([newurl])
-            for file in os.listdir("./"):
-                if file.endswith(".mp3"):
-                    os.rename(file, 'song.mp3')
-            source = discord.PCMVolumeTransformer(
-                discord.FFmpegPCMAudio('song.mp3'))
-            ctx.voice_client.play(source, after=lambda e: print(
-                'Player error: %s' % e) if e else None)
-            player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
-            embed = discord.Embed(title = "Now playing:", description = player.title, color = 0x00FFFF)
-            song = player.title
-            await ctx.send(embed = embed)
+        elif channel != None:
+            await channel.connect()
+        else:
+            return await ctx.send("Neither me or you are in a voice channel")
+
+        there = os.path.isfile("song.mp3")
+        if there:
+            os.remove("song.mp3")
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([newurl])
+        for file in os.listdir("./"):
+            if file.endswith(".mp3"):
+                os.rename(file, 'song.mp3')
+        source = discord.PCMVolumeTransformer(
+            discord.FFmpegPCMAudio('song.mp3'))
+        ctx.voice_client.play(source, after=lambda e: print(
+            'Player error: %s' % e) if e else None)
+        player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
+        embed = discord.Embed(title="Now playing:",
+                              description=player.title, color=0x00FFFF)
+        song = player.title
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def saved(self, ctx, *arg):
         global song
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
-        if voice and voice.is_connected():
-            await voice.disconnect()
-        v = 1.0 
+        if(voice != None):
+            voice.stop()
+        v = 1.0
         folder = ''
-        if len(arg)==0:
+        if len(arg) == 0:
             folder = 'sia'
         else:
             folder = arg[0]
@@ -265,40 +286,44 @@ class VoiceModule(commands.Cog):
                 await ctx.voice_client.move_to(channel)
         elif channel != None:
             await channel.connect()
+        else:
+            await ctx.send("Neither me or you are in a voice channel")
+
         mypath = os.path.dirname(os.path.abspath(__file__))
-        f = open(mypath+"\..\\savedmusic\\" + folder.lower() +"\\names.txt")
+        f = open(mypath+"\..\\savedmusic\\" + folder.lower() + "\\names.txt")
         content = ''
         try:
             names = [line[:-1] for line in f]
-            d= 1
+            d = 1
             d = 1
             content = f.read()
         finally:
             f.close()
             print(names)
-            #names[0] = names[0][3:]
+            # names[0] = names[0][3:]
             i = 0
             msg = []
             msg = [None] * len(names)
             for name in names:
                 name = str(name)
-                if name!='names.txt' and path.exists(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name):
+                if name != 'names.txt' and path.exists(mypath+"\..\\savedmusic\\" + folder.lower() + "\\" + name):
                     source = discord.PCMVolumeTransformer(
-                        discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() +"\\" +name))
+                        discord.FFmpegPCMAudio(mypath+"\..\\savedmusic\\" + folder.lower() + "\\" + name))
                     ctx.voice_client.play(source, after=lambda e: print(
                         'Player error: %s' % e) if e else None)
-                    ctx.voice_client.source.volume = v  
-                    embed = discord.Embed(title = "Now playing:", description = name[:-4], color = 0x00FFFF)
-                    msg[i] = await ctx.send(embed = embed)
+                    ctx.voice_client.source.volume = v
+                    embed = discord.Embed(
+                        title="Now playing:", description=name[:-4], color=0x00FFFF)
+                    msg[i] = await ctx.send(embed=embed)
                     song = name[:-4]
-                    if i>0:
+                    if i > 0:
                         await msg[i-1].delete()
-                    while ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
+                    while ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
                         v = ctx.voice_client.source.volume
                         await asyncio.sleep(1)
-                    i+=1
-            voice = get(ctx.bot.voice_clients, guild=ctx.guild)
+                    i += 1
             voice.stop()
+
 
 def setup(bot):
     bot.add_cog(VoiceModule(bot))
