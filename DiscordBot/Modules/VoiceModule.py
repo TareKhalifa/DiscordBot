@@ -69,7 +69,17 @@ ytdl_format_options = {
     # bind to ipv4 since ipv6 addresses cause issues sometimes
     'source_address': '0.0.0.0'
 }
-
+downloadpath = os.path.dirname(os.path.abspath(
+    __file__)) + '\..\songs\%(title)s.%(ext)s'
+ydl_opts = {
+    'outtmpl': downloadpath,
+    'format': 'bestaudio/best',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '0',
+    }],
+}
 ffmpeg_options = {
     'options': '-vn'
 }
@@ -97,6 +107,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+
+
+def voice_channel_connect():
+    return(1)
 
 
 class VoiceModule(commands.Cog):
@@ -213,6 +227,7 @@ class VoiceModule(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *url):
+        global song
         voice = get(ctx.bot.voice_clients, guild=ctx.guild)
         if(voice != None):
             voice.stop()
@@ -237,32 +252,29 @@ class VoiceModule(commands.Cog):
             await channel.connect()
         else:
             return await ctx.send("Neither me or you are in a voice channel")
-
-        there = os.path.isfile("song.mp3")
-        if there:
-            os.remove("song.mp3")
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([newurl])
-        for file in os.listdir("./"):
-            if file.endswith(".mp3"):
-                os.rename(file, 'song.mp3')
-        source = discord.PCMVolumeTransformer(
-            discord.FFmpegPCMAudio('song.mp3'))
-        ctx.voice_client.play(source, after=lambda e: print(
-            'Player error: %s' % e) if e else None)
         player = await YTDLSource.from_url(newurl, loop=self.bot.loop, stream=True)
-        embed = discord.Embed(title="Now playing:",
-                              description=player.title, color=0x00FFFF)
-        song = player.title
-        await ctx.send(embed=embed)
+        filepath = os.path.dirname(os.path.abspath(__file__))
+        filepath = filepath + '\..\\songs\\' + player.title + '.mp3'
+        there = os.path.isfile(filepath)
+        if there:
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(filepath))
+            ctx.voice_client.play(source, after=lambda e: print(
+                'Player error: %s' % e) if e else None)
+            embed = discord.Embed(
+                title="Now playing:", description=player.title, color=0x00FFFF)
+            await ctx.send(embed=embed)
+        else:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([newurl])
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(filepath))
+            ctx.voice_client.play(source, after=lambda e: print(
+                'Player error: %s' % e) if e else None)
+            embed = discord.Embed(title="Now playing:",
+                                  description=player.title, color=0x00FFFF)
+            song = player.title
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def saved(self, ctx, *arg):
